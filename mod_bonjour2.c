@@ -106,16 +106,22 @@ typedef struct registrationRec {	/* Needs to store info required to clean up upo
     server_rec* serverData;
 } registrationRec;
 
+typedef struct resourceRec {
+	char name[REGNAME_MAX+1];
+	char text[TXT_MAX+1];
+	uint16_t port;
+} resourceRec;
+
 typedef struct module_cfg_rec {
     apr_pool_t *pPool;
 	char*	sig;
 	char* regName;
 	char* regNameFormat;
-	char* regText;
 	uint16_t port;
     apr_array_header_t *registrationRecPtrArray;
 	Boolean regUserSiteCmd;
 	Boolean regResourceCmd;
+	apr_array_header_t *resourceRecPtrArray;
 	Boolean regDefaultSiteCmd;
 } module_cfg_rec;
 // Revise to use array or hashes for mult-valued config items like regUserSite. See how mod_mime does it.
@@ -1185,9 +1191,16 @@ static const char *processRegResource( cmd_parms *cmd, __attribute__((unused)) v
 	/* To do: maintain array of resources */
 	
 	module_cfg->regResourceCmd = TRUE;
-	module_cfg->regName = apr_pstrdup( cmd->pool, inName );
-	module_cfg->regText = apr_pstrdup( cmd->pool, inPath );
-	module_cfg->port = port;
+
+	resourceRec **newHandle;
+	resourceRec *new = apr_palloc( module_cfg->pPool, sizeof(resourceRec) );
+
+	strncpy( new->name, inName, sizeof(new->name) );
+	strncpy( new->text, inPath, sizeof(new->text) );
+	new->port = port;
+
+	newHandle = (resourceRec **)apr_array_push( module_cfg->resourceRecPtrArray );
+	*newHandle = new;
 
     return NULL;
 }
@@ -1266,9 +1279,17 @@ static int bonjourPostConfig( apr_pool_t *p, __attribute__((unused)) apr_pool_t 
             registerUser( module_cfg->regName, module_cfg->regNameFormat, &module_cfg->port, &fake_cmd );
 	}
 	
-	if (module_cfg->regResourceCmd)
-        registerService( module_cfg->regName, &module_cfg->port, module_cfg->regText, serverData );
+	if (module_cfg->regResourceCmd) {
+		int i;
+		resourceRec** resourceRecPtrs = NULL;
+		resourceRecPtrs = (resourceRec**)module_cfg->resourceRecPtrArray->elts;
 
+		for (i = 0; i < module_cfg->resourceRecPtrArray->nelts; i++) {
+			if (!resourceRecPtrs[i]) continue;
+			registerService( resourceRecPtrs[i]->name, &resourceRecPtrs[i]->port, resourceRecPtrs[i]->text, serverData );
+		}
+	}
+	
 	if (module_cfg->regDefaultSiteCmd)
         registerService( "", &module_cfg->port, "", serverData );
 
@@ -1315,6 +1336,7 @@ static void *bonjourModuleCreateServerConfig( apr_pool_t *p, server_rec *serverD
 	module_cfg->registrationRecPtrArray = apr_array_make( pPool, 0, sizeof(registrationRec*) );
 	module_cfg->regUserSiteCmd = FALSE;
 	module_cfg->regResourceCmd = FALSE;
+	module_cfg->resourceRecPtrArray = apr_array_make( pPool, 0, sizeof(resourceRec*) );
 	module_cfg->regDefaultSiteCmd = FALSE;
 
 	apr_pool_userdata_set(module_cfg, BONJOUR_KEY, apr_pool_cleanup_null, pPool);
