@@ -1,8 +1,7 @@
-mod_bonjour2
-============
+mod_bonjour
+===========
 
-This is a fork of Apple's mod_bonjour code from the Apple open source repository.
-http://www.opensource.apple.com/source/apache_mod_bonjour/apache_mod_bonjour-12/
+This is a fork of Apple's mod_bonjour code from the [Apple open source repository][3].
 
 This fork includes a patch supplied by Homo [Habilis Associates][1].
 
@@ -23,3 +22,4 @@ Build and install form source:
 
 [1]: http://habilis.net/mod-bonjour-fix/ 
 [2]: http://joemaller.com/2007/12/04/multiple-registerresource-directives-broken-in-leopard/
+[3]: http://www.opensource.apple.com/source/apache_mod_bonjour/apache_mod_bonjour-12/
