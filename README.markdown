@@ -12,3 +12,15 @@ causes multiple RegisterResource directives in your Apache web server configurat
 to be ignored.  Or rather the last directive to overwrite all previous directives.
 
 http://joemaller.com/2007/12/04/multiple-registerresource-directives-broken-in-leopard/
+
+Build & Install
+===============
+
+Backup your existing mod_bonjour.so in /usr/libexec/apache2:
+	sudo cp /usr/libexec/apache2/mod_bonjour.so /usr/libexec/apache2/mod_bonjour.so.orig
+	
+Build and install form source:
+	make clean
+	make
+	sudo make install
+
